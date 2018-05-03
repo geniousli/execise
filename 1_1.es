@@ -131,10 +131,10 @@
     (if (= start end)
         n1
         (fn (+ start 1)
-                  end
-                  (+ n1 (* 2 n2) (* 3 n3))
-                  n1
-                  n2)))
+            end
+            (+ n1 (* 2 n2) (* 3 n3))
+            n1
+            n2)))
   (define (warp_fn n)
     (if (< n 3)
         n
@@ -277,9 +277,9 @@
           (else (+ num 2))))
   (define (find-divisor-iter test)
     (cond ((> (square test) n) n)
-        ((divides? test n)
-         test)
-        (else (find-divisor-iter (next-divisor test)))))
+          ((divides? test n)
+           test)
+          (else (find-divisor-iter (next-divisor test)))))
   (find-divisor-iter test-divisor))
 
 ;; 1000 => 2, 10000 => 3, 100000 => 7 1000000 => 9, 10000000 => 19
@@ -346,11 +346,56 @@
   (sum identity a inc b))
 
 
-(define (xinpule-integer f a b n)
-  (define (i-f x)
-    (let x (/ (- x a) h)
-      (cond x))
-    (cond (())))
-  (define h (/ (- b a) n))
-  (define (next x) (+ h x))
-  (sum f a next b)
+
+;; (define (xinpule-integer f a b n)
+;;   (define (i-f x)
+;;     (let x (/ (- x a) h)
+;;       (cond x))
+;;     (cond (())))
+;;   (define h (/ (- b a) n))
+;;   (define (next x) (+ h x))
+;;   (sum f a next b)
+
+;; 1.29 todo
+
+;; 1.30
+(define (sum term a next b)
+  (define (iter num sum-num)
+    (if (> num b)
+        sum-num
+        (iter (next num) (+ sum-num (term num)))))
+
+  (iter a 0))
+
+
+;; 1.31
+
+(define (product term a next b)
+  (if (> a b)
+      1
+      (* (term a) (product term (next a) next b))))
+
+(define (product term a next b)
+  (define (iter num product-num)
+    (if (> num b)
+        product-num
+        (iter (next num) (* (term num) product-num))))
+  (iter a 1))
+
+
+(define (pai n)
+  (define (term k)
+    (define (fenzi k)
+      (+ 2 (* 2 (integer-floor k 2))))
+    (define (fenmu k)
+      (+ (* (integer-floor (- k 1) 2) 2) 3))
+
+    (/ (fenzi k)
+       (fenmu k)))
+
+  (product term 1 (lambda (x) (+ x 1)) n))
+
+;; 1.32
+
+(define (accumulate combiner null-value term a next b)
+  (if (> )))
