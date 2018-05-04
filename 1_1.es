@@ -398,4 +398,39 @@
 ;; 1.32
 
 (define (accumulate combiner null-value term a next b)
-  (if (> )))
+  (define (iter num sum-num)
+    (if (> num b)
+      sum-num
+      (iter (next num) (combiner (term num) sum-num))))
+  (iter a null-value))
+
+(define (accumulate combiner null-value term a next b)
+  (if (> a b)
+    null-value
+    (combiner (term a) (accumulate combiner null-value term (next a) next b)))
+
+;; 测试迭代版本跟递归版本的区别
+(define (combiner a b)
+  (newline)
+  (display a)
+  (display "----")
+  (display b)
+  (+ a b))
+
+(define (sum term a next b)
+  (accumulate + 0 term a next b))
+
+(define (product term a next b)
+  (accumulate * 1 term a next b))
+
+;;1.33
+
+(define (filtered-accumulate filter combiner null-value term a next b)
+  (define (iter num sum-num)
+    (if (> num b)
+      sum-num
+      (iter (next num)
+        (if (filter num)
+            (combiner (term num) sum-num)
+            sum-num))))
+  (iter a null-value))
