@@ -393,7 +393,7 @@
     (/ (fenzi k)
        (fenmu k)))
 
-  (product term 1 (lambda (x) (+ x 1)) n))
+  (* 4 (exact->inexact (product term 1 (lambda (x) (+ x 1)) n))))
 
 ;; 1.32
 
@@ -434,3 +434,175 @@
             (combiner (term num) sum-num)
             sum-num))))
   (iter a null-value))
+
+
+(filtered-accumulate prime? + 1 identity 2 inc 10)
+
+
+;; lambda 是用于构造一次性函数的简单方式 (lambda (<params>) <body>)
+;; let 用于创造局部变量，let是lambda的一种特殊性形式，语法糖 todo： 考察是不是宏构造的。
+
+;; (let ((<var1> <exp1>)
+;;       (<var2> <exp2>)
+;;       (<var3> <exp3>)
+;;       .....
+;;       (<varn> <expn>))
+
+;;   <body>)
+
+;; ((lambda (<var1> ... <varn>)
+;;    <body>
+;;  ) <exp1> <exp2> ... <expn>)
+
+;; 当时let中定义的变量，于同等形式的lambda的参数同样时，需要注意，let 等同于lambda， 需要按照lambda调用的规则来对body中进行变量求值
+
+;; 1.34
+
+(define (f g)
+  (g 2))
+
+(f f)
+;; error， (f f), 应用序，展开形式为 (f 2) 再次展开为 (2 2)， 2不是函数， 所以会产生呢个 the object 2 is not applicable
+
+
+
+;;高阶过程同样是一类方法，可以用于表达计算的一般性过程，其中所涉及的特定函数无关。
+;; 1.3.3
+
+
+(define average (lambda (x y) (/ (+ x y) 2))))
+(define (close-enough? x y) (< (abs (- x y)) 0.001))
+
+(define (search fun neg-point pos-point)
+  (let ((midpoint (average neg-point pos-point)))
+    (if (close-enough? neg-point pos-point)
+        midpoint
+        (let ((test-value (fun midpoint)))
+          (cond ((positive? test-value)
+                 (search fun neg-point midpoint))
+                ((negative? test-value)
+                 (search fun midpoint pos-point))
+                (else midpoint))))))
+
+(define (half-interval-method f a b)
+  (let ((a-value (f a))
+        (b-value (f b)))
+    (cond ((and (positive? a-value) (negative? b-value))
+           (search f b-value a-value))
+          ((and (positive? b-value) (negative? a-value))
+           (search f a-value b-value))
+          (else (error "zero not in value of a b")))))
+
+(half-interval-method sin 2.0 4.0)
+
+
+(define tolerance 0.00001)
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+
+  (define (try guess)
+    (let ((next (f guess)))
+      (if (close-enough? next guess)
+          next
+          (try next))))
+  (try first-guess))
+
+;; y * y = x => y = x / y
+(define (sqrt x)
+  (fixed-point (lambda (y) (/ x y))
+               1.0))
+;; 假设第一个猜想是 y1, next => x / y1, next2 = x / (x / y1) = y1, 应用函数三次将反复的进入循环，所以使用了 平均阻尼 函数，即下面的过程， 同 1.1.7中的函数方法一样
+
+(define (sqrt x)
+  (fixed-point (lambda (y) (average y (/ x y)))
+               1.0))
+;; 1.35
+(fixed-point (lambda (x) (+ 1 (/ 1 x))) 0.4)
+
+;;为什么是1.618？
+
+;; 1.36
+
+(define (i-fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+
+  (define (try guess)
+    (let ((next (f guess)))
+      (newline)
+      (display "guess is:")
+      (display next)
+      (if (close-enough? next guess)
+          next
+          (try next))))
+  (try first-guess))
+
+(i-fixed-point (lambda (x) (/ (log 1000) (log x))) 1000)
+
+
+
+;;将过程作为参数能够显著增强我们的表达式，同样可以 将过程作为返回值
+
+
+;; 第一级元素的权利有：
+
+;; × 可以用变量命名
+;; × 可以提供给过程作为参数
+;; × 可以由过程作为结果返回
+;; × 可以包含在数据结构中
+;; lisp 给了过程完全的第一级元素状态
+
+
+;; 1.41
+
+(define (double f)
+  (lambda (x) (f (f x))))
+
+(((double (double double)) inc) 5)
+(((double double) inc) 5)
+;; equal to
+((double (double (double (double inc)))) 5)
+;; guess the value of this one
+(((double (double (double double))) inc) 5)
+
+;; 如果简单的看，只是将函数f循环了，n次， 但是如果传入参数的f 返回函数呢？例如调用
+;; ((n-times 4 double inc 5))
+;;
+(define (n-times n f init)
+  (define (iter time sum)
+    (if (> time n)
+        sum
+        (iter (+ time 1) (f sum))))
+
+  (iter 0 init))
+
+
+
+;; 1.42
+
+(define (compose f g)
+  (lambda (x) (f (g x))))
+((compose square inc) 6)
+
+;; 1.43 缺点是之能够接受一个参数的函数，其他的不行，没有haskell的NB
+(define (repeated fun times)
+  (define (iter f num)
+    (if (>= num times)
+        (lambda (x) (f x))
+        (iter (lambda (x) (fun (f x))) (+ num 1))))
+  (iter fun 1))
+
+(define (i-repeated fun times)
+  (define (iter num x)
+    (if (<= num 1)
+        (fun x)
+        (fun (iter (- num 1) x))))
+  (lambda (x) (iter times x)))
+
+
+;; 1.45
+;; 1.46
+
+
+;;-----------------------------------------------------------------------------------------------
