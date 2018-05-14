@@ -432,13 +432,33 @@
 
 (total-weight mobile)
 
-(define (weight-comfort mobile)
-  (define (branch-weight branch)
-    (let ((struct (branch-structure branch)))
-      (if (not (pair? struct))
-          (* (branch-length branch) struct)
-          (* (branch-length branch) (total-weight struct)))))
-  (= (branch-weight (left-branch mobile))
-     (branch-weight (right-branch mobile))))
+;;
 
+(define (branch-weight branch)
+  (if (pair? (branch-structure branch))
+      (* (total-weight (branch-structure branch)) (branch-length branch))
+      (* (branch-structure branch) (branch-length branch))))
+
+(define (weight-comfort mobile)
+  (and (= (branch-weight (left-branch mobile))
+          (branch-weight (right-branch mobile)))
+       (if (pair? (branch-structure (left-branch mobile)))
+           (weight-comfort (branch-structure (left-branch mobile)))
+           true)
+       (if (pair? (branch-structure (right-branch mobile)))
+           (weight-comfort (branch-structure (right-branch mobile)))
+           true)))
+
+
+(define comfort-mobile
+  (make-mobile (make-branch 1 (make-mobile (make-branch 10 10)
+                                           (make-branch 5 20)))
+               (make-branch 2 15)))
+
+
+(total-weight (branch-structure (left-branch comfort-mobile)))
+(branch-length (left-branch comfort-mobile))
+(branch-weight (left-branch mobile))
+
+(weight-comfort mobile)
 ;;  d 因为存在 界面函数，所以只需要改动4个函数即可
