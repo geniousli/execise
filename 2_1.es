@@ -376,16 +376,22 @@
 
 (define x (list (list 1 2) (list 3 4) (list 5 6)))
 
-;; 2.28 todo need accumulate
+;; 2.28 todo need accumulate, list-accumulate
+
+(define (accumulate combiner null-value term items)
+  (if (null? items)
+    null-value
+    (combiner (term (car items)) (accumulate combiner null-value term (cdr items)))))
 
 (define (fringe tree)
-  (if ((null? tree) '())
-      (((not (pair? tree))) tree)
-      (else )))
+  (cond ((null? tree) '())
+      ((not (pair? tree)) (list tree))
+      (else
+        (accumulate (lambda (x y) (append x y)) '() (lambda (x) (fringe x)) tree))))
 
 (define x (list (list 1 2) (list 3 4)))
+(define x (list (list 1 2) (list 3 4) (list 20 10)))
 (fringe x)
-
 
 ;; 2.29
 
