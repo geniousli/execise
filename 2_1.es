@@ -457,8 +457,17 @@
 
 
 (total-weight (branch-structure (left-branch comfort-mobile)))
+(total-weight (branch-structure (left-branch comfort-mobile)))
+
+
+
 (branch-length (left-branch comfort-mobile))
-(branch-weight (left-branch mobile))
+(total-weight (branch-structure (left-branch comfort-mobile)))
+
+(branch-weight (left-branch comfort-mobile))
+
+(branch-structure (left-branch mobile))
 
 (weight-comfort mobile)
+
 ;;  d 因为存在 界面函数，所以只需要改动4个函数即可
