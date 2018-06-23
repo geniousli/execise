@@ -1382,6 +1382,7 @@
                (adjoin-set x (cdr set))))))
 
 (define (make-leaf-set pairs)
+  (display "xxxxx")
   (if (null? pairs)
       '()
       (let ((pair (car pairs)))
@@ -1392,6 +1393,7 @@
 
 (define pairs (list (list 'A 4) (list 'B 2) (list 'C 1) (list 'D 1)))
 
+(car pairs)
 (make-leaf-set pairs)
 (define (find-mix array)
   (cons (list (car array) (cadr array)) (cddr array)))
