@@ -1,4 +1,4 @@
-`;;
+s`;;
 
 (define (add-rat x y)
   (make-rat (+ (* (numer x) (denom y))
@@ -1349,11 +1349,6 @@
   (caddr x))
 
 (define (make-code-tree left right)
-  (display left)
-  (display '*****)
-  (display right)
-  (display '-------------)
-  (newline)
   (list left
         right
         (append (symbols left) (symbols right))
@@ -1382,7 +1377,6 @@
                (adjoin-set x (cdr set))))))
 
 (define (make-leaf-set pairs)
-  (display "xxxxx")
   (if (null? pairs)
       '()
       (let ((pair (car pairs)))
@@ -1391,9 +1385,9 @@
                     (make-leaf-set (cdr pairs))))))
 
 
-(define pairs (list (list 'A 4) (list 'B 2) (list 'C 1) (list 'D 1)))
+(define pairs (list (list 'A 4) (list 'B 2) (list 'C 1) (list 'D 1) (list 'E 10)))
 
-(car pairs)
+
 (make-leaf-set pairs)
 (define (find-mix array)
   (cons (list (car array) (cadr array)) (cddr array)))
@@ -1439,7 +1433,9 @@
                    (make-code-tree (make-leaf 'D 1)
                                    (make-leaf 'C 1)))))
 
-
+(make-code-tree (make-leaf 'b 2)
+                (make-code-tree (make-leaf 'd 1)
+                                (make-leaf 'c 1)))
 (define sample-message '(0 1 1 0 0 1 0 1 0 1 1 1 0))
 
 (decode sample-message sample-tree)
@@ -1450,29 +1446,401 @@
 (define (encode message tree)
   (if (null? message)
       '()
-      (append (encode-symbol (car message) tree)
+      (append (encode-symbol-list (car message) tree)
               (encode (cdr message) tree))))
 
-(define (encode-symbol message tree pre)
-  (cond ((null? tree) (cons false pre))
-        ((leaf? tree)
+(define (encode-symbol message tree)
+  (define (iter message tree)
+    (cond ((null? tree) (cons false '()))
+          ((leaf? tree)
          (if (eq? (symbol-leaf tree) message)
-             (cons true pre)
-             (cons false pre)))
+             (cons true '())
+             (cons false '())))
         (else
-         (let ((left-result (encode-symbol message (left-branch tree) (append pre '0)))
-               (right-result (encode-symbol message (right-branch tree) (append pre (list '1)))))
-           (cond ((car left-result) left-result)
-                 ((car right-result) right-result))))))
-
-
-
+         (let ((left (left-branch tree))
+               (right (right-branch tree)))
+           (let ((left-result (encode-symbol message left)))
+             (if (car left-result)
+                 (cons true (append (cdr left-result) (list '0)))
+                 (let ((right-result (encode-symbol message right)))
+                   (if (car right-result)
+                       (cons true (append (cdr right-result) (list '1)))
+                       (cons false '())))))))))
+  (iter message tree))
 
 
 (define (encode-symbol-list message tree)
-  (encode-symbol message tree '()))
+  (let ((result (encode-symbol message tree)))
+    (if (car result)
+        (reverse (cdr result))
+        (error "no message in the tree"))))
+    
 
 (encode-symbol-list 'c sample-tree)
 
-(null? (car result))
-(right-branch (right-branch (right-branch sample-tree)))
+;;2.69
+
+(define (generate-huffman-tree pairs)
+  (successive-merge (make-leaf-set pairs)))
+
+(define (successive-merge pairs)
+  (let ((one (car pairs))
+        (two (cadr pairs))
+        (remain (cddr pairs)))
+    (if (null? remain)
+        (make-code-tree one two)
+        (successive-merge (adjoin-set (make-code-tree one two)
+                                      remain)))))
+
+
+;; test -------------------
+(define pairs (list (list 'A 4) (list 'B 2) (list 'D 1) (list 'C 1) (list 'E 10)))
+(generate-huffman-tree pairs)
+(define generate-tree (generate-huffman-tree pairs))
+(encode-symbol-list 'b (generate-huffman-tree pairs))
+
+;; 2.70
+
+(define pairs (list (list 'a 2) (list 'na 16) (list 'boom 1) (list 'sha 3) (list 'get 2) (list 'yip 9) (list 'job 2) (list 'wah 1)))
+
+(define huffman-tree (generate-huffman-tree pairs))
+
+(decode (encode (list 'get 'a 'job) huffman-tree) huffman-tree)
+(encode-symbol-list 'a huffman-tree)
+(encode-symbol 'na huffman-tree)
+
+(decode (encode (list 'sha 'na 'na 'na 'na) huffman-tree) huffman-tree)
+(decode (encode (list 'wah 'yip 'job) huffman-tree) huffman-tree)
+
+;; 2.71
+;;  最频繁的用１个，不频繁的用n 个
+
+
+
+;; 2.53
+
+(list 'a 'b 'c)
+(cdr '(george (y1)))
+(cdr '((x1 x2) (y1 y2)))
+(cdr (list (list 'x1 'x2) (list 'y1 'y2)))
+;;(cadr '((x1 x2) (y1 y2)))
+
+
+;; 抽象数据的多重表示, 复数　两种的表现形式，　坐标系＋级坐标, 复数的两种表现形式，他们适合不同的运算，坐标系适合加法，极坐标适合　乘法
+
+
+;; 不同的坐标表示形式, 加法减法使用,坐标形式。乘法使用　角膜形式
+(make-from-real-imag (real-part z) (imag-part z))
+(make-from-mag-ang (magnitude z) (angle z))
+
+(define (add-complex z1 z2)
+  (make-from-real-imag (+ (real-part z1) (real-part z2))
+                       (+ (imag-part z1) (imag-part z2))))
+
+(define (sub-complex z1 z2)
+  (make-from-real-imag (- (real-part z1) (real-part z2))
+                       (- (imag-part z1) (imag-part z2))))
+
+(define (mul-complex z1 z2)
+  (make-from-mag-ang (* (magnitude z1) (magnitude z2))
+                     (+ (angle z1) (angle z2))))
+
+(define (div-complex z1 z2)
+  (make-from-mag-ang (/ (magnitude z1) (magnitude z2))
+                     (- (angle z1) (angle z2))))
+
+;; 单纯使用　坐标形式，其中　需要通过　三角函数来转换到　角膜坐标
+(define (real-part z) (car z))
+(define (imag-part z) (cdr z))
+
+(define (magnitude z)
+  (sqrt (+ (square (real-part z)) (square (imag-part z)))))
+
+(define (angle z)
+  (atan (imag-part z) (real-part z)))
+
+(define (make-from-real-imag x y)
+  (cons x y))
+
+(define (make-from-mag-ang r a)
+  (cons (* r (cos a)) (* r (sin a))))
+
+
+;;另一方面，从角膜到坐标的转换
+
+(define (real-part z)
+  (* (magnitude z) (cos (angle z))))
+
+(define (imag-part z)
+  (* (magnitude z) (sin (angle z))))
+
+(define (magnitude z) (car z))
+(define (angle z) (cdr z))
+
+(define (make-from-real-imag x y)
+  (cons (sqrt (+ (square x) (square y)))
+        (atan y x)))
+
+(define (make-from-mag-ang r a) (cons r a))
+
+;; 类型区分，　在每个类型构造函数中，包含类型标志
+
+(define (attach-tag type-tag contents)
+  (cons type-tag contents))
+
+(define (type-tag datum)
+  (if (pair? datum)
+      (car datum)
+      (error "bad construct")))
+
+(define (contents datum)
+  (if (pair? datum)
+      (cdr datum)
+      (error "bad construtct")))
+
+
+(define (rectangular? x)
+  (eq? (type-tag x) 'rectangular))
+
+(define (polar? x)
+  (eq? (type-tag x) 'polar))
+
+(define (real-part-rectangular z) (car z))
+(define (imag-part-rectangular z) (cdr z))
+
+(define (magnitude-rectangular z)
+  (sqrt (+ (square (real-part-rectangular z))
+           (square (imag-part-rectangular z)))))
+
+(define (angle-rectangular z)
+  (atan (imag-part-rectangular z)
+        (real-part-rectangular z)))
+
+(define (make-from-real-imag-rectangular x y)
+  (attack-tag 'rectangular (cons x y)))
+
+(define (make-from-mag-ang-rectangular r a)
+  (attack-tag 'rectangular (cons (* r (cos a)) (* r (sin a)))))
+
+
+;; polar
+
+(define (real-part-polar z)
+  (* (magnitude-polar z) (cos (angle-polar z))))
+
+(define (imag-part-polar z)
+  (* (magnitude-polar z) (sin (angle-polar z))))
+
+(define (magnitude-polar z) (car z))
+
+(define (angle-polar z) (cdr z))
+
+(define (make-from-real-imag-polar x y)
+  (attack-tag 'polar (cons (sqrt (+ (square x) (square y)))
+                           (atan y x))))
+
+(define (make-from-mag-ang-polar r a)
+  (attack-tag 'polar (cons r a)))
+
+
+(define (real-part z)
+  (cond ((rectangular? z)
+         (real-part-rectangular (contents z)))
+        ((polar? z)
+         (real-part-polar (content z)))
+        (else (error "unknow type ---"))))
+
+(define (imag-part z)
+  (cond ((rectangular? z)
+         (imag-part-rectangular (contents z)))
+        ((polar? z)
+         (imag-part-polar (contents z)))
+        (else (error "unknow type ---"))))
+
+(define (magnitude z)
+  (cond ((rectangular? z)
+         (magnitude-rectangular (contents z)))
+        ((polar? z)
+         (magnitude-polar (contents z)))
+        (else (error "unknow type ---"))))
+
+
+(define (angle z)
+  (cond ((rectangular? z)
+         (angle-rectangular (contents z)))
+        ((polar? z)
+         (angle-polar (contents z)))))
+
+;; 实现运算的时候，依然可以使用add-complex 等函数，因为他们是建立在　坐标系，　角膜之上的
+
+
+
+;; 检查一个数据的类型，并据此调用某个适当过程　成为基于类型的分派，　前面的实现是存在问题的，　因为类型的屏蔽层次中需要知道类型的具体信息，来具体分派，　产生的问题就是，添加新的类型的时候，需要添加新的cond条件判断，　第二个缺点，　在于，　系统中的函数后缀都需要添加各自的类型标志，　函数中不能存在重复的名字, 数据导向的程序设计编程技术解决了这些问题，　将类型＆函数操作，　放在一张二维数组中。通过函数名和数据类型的组合定位到函数，　并调用。
+
+
+(define (put op type item))
+(define (get op type))
+
+(define (install-rectangular-package)
+  (define (real-part z) (car z))
+  (define (imag-part z) (cdr z))
+
+  (define (magnitude z)
+    (sqrt (+ (square (real-part z)) (square (imag-part z)))))
+
+  (define (angle z)
+    (atan (imag-part z) (real-part z)))
+
+  (define (make-from-real-imag x y)
+    (cons x y))
+
+  (define (make-from-mag-ang r a)
+    (cons (* r (cos a)) (* r (sin a))))
+
+
+  (define (tag x) (attach-tag 'rectangular x))
+
+  (put 'real-part '(rectangular) real-part)
+  (put 'imag-part '(rectangular) imag-part)
+  (put 'magnitude '(rectangular) magnitude)
+  (put 'angle '(rectangular) angle)
+  (put 'make-from-real-imag 'rectangular (lambda (x y) (tag (make-from-real-imag x y))))
+  (put 'make-from-mag-ang 'rectangular  (lambda (x y) (tag (make-from-mag-ang x y))))
+
+
+  'done)
+
+(define (install-polar-package)
+
+  (define (real-part z)
+    (* (magnitude z) (cos (angle z))))
+
+  (define (imag-part z)
+    (* (magnitude z) (sin (angle z))))
+
+  (define (magnitude z) (car z))
+  (define (angle z) (cdr z))
+
+  (define (make-from-real-imag x y)
+    (cons (sqrt (+ (square x) (square y)))
+          (atan y x)))
+
+  (define (make-from-mag-ang r a) (cons r a))
+
+
+  (define (tag x) (attach-tag 'polar x))
+  (put 'real-part '(polar) real-part)
+  (put 'imag-part '(polar) imag-part)
+  (put 'magnitude '(polar) magnitude)
+  (put 'angle '(polar) angle)
+  (put 'make-from-real-imag 'polar (lambda (x y) (tag (make-from-real-imag x y))))
+  (put 'make-from-mag-ang 'polar (lambda (x y) (tag (make-from-mag-ang x y))))
+
+  'done
+  )
+
+
+;; 因为函数名称都是在过程中，所以不会有命名冲突的问题存在
+
+
+;;? tags　为什么？为什么需要用到map , apply proc proc是一个序列list
+(define (apply-generate op . args)
+  (let ((type-tags (map type-tag args)))
+    (let ((proc (get op type-tags)))
+      (if proc
+          (apply proc (map contents args))
+          (error "no methods"
+                 (list op type-tags))))))
+
+
+
+(define (real-part a) (apply-generate 'real-part a))
+(define (imag-part a) (apply-generate 'imag-part a))
+(define (magnitude a) (apply-generate 'magnitude a))
+(define (angle a) (apply-generate 'angle a))
+
+
+(define global-set '((ploar (first 1 23))))
+
+(list-find global-set (cdr (list-find global-set 'ploar (lambda (x) (car x)))) 'first (labmda (x) (car x)))
+
+
+(cdr (list-find global-set 'ploar (lambda (x) (car x))))
+
+(map (lambda (x) (display (car x))) (cdr (list-find global-set 'ploar (lambda (x) (car x)))))
+(display global-set)
+
+
+(map (lambda (x) (display (car x))) global-set)
+
+
+(define (list-find list type op)
+  (if (not (null? list))
+      (let ((head (car list)))
+        (if (equal? (op head) type)
+            (car list)
+            (list-find (cdr list) type op)))
+      '()))
+
+
+(append (get 'first 'ploar) (list 4))
+
+(define (get op type)
+  (let ((type-list (cdr (list-find global-set type (lambda (x) (car x))))))
+    (if (not (null? type-list))
+        (list-find type-list op (lambda (x) (car x)))
+        '())))
+
+(define (fold-left op initial sequence)
+  (define (iter result rest)
+    (if (null? rest)
+        result
+        (iter (op result (car rest))
+              (cdr rest))))
+
+  (iter initial sequence))
+
+(define (list-include? item sequence)
+  fold-left (lambda (result curr) (if result
+                                      true
+                                      (equal? curr item))) sequence)
+
+
+
+(define (test-list item sequence)
+  (if (list-include? item sequence)
+      (display "incldue the sequence")
+      (display "not include")))
+
+
+
+(define (put op type item)
+  (map (lambda (x) (if (equal? (car x) type)
+                       (let ((ops (map (lambda (curr) (car curr)) (cdr x))))
+                         (if (list-include? op ops)
+                             (cons (car x) (map (lambda (y) (
+                                               if (equal? y op)
+                                                  (append y (list item))
+                                                  y)) cdr x))
+                             (append x (list type (list op item)))))
+                       x)) global-set))
+
+(display global-set)
+(put 'first 'ploar 100)
+(put 'seond 'ploar 200)
+                    
+(define global-set (put 'real-part '(polar) real-part))
+(define global-set (put 'imag-part '(polar) real-part))
+
+(get 'real-part '(polar))
+
+(display (list-find global-set '(polar) (lambda (x) (car x))))
+
+(define result (list-find global-set '(polar) (lambda (x) (car x))))
+
+(display result)
+
+(list-find result 'real-part (lambda (x) (car x)))
+
+
+(display global-set)
